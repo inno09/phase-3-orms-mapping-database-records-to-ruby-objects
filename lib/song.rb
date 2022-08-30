@@ -2,6 +2,8 @@ class Song
 
   attr_accessor :name, :album, :id
 
+# creates a new nstance of an object with the following values
+
   def initialize(name:, album:, id: nil)
     @id = id
     @name = name
@@ -16,6 +18,7 @@ class Song
     DB[:conn].execute(sql)
   end
 
+# creates the table in the database
   def self.create_table
     sql = <<-SQL
       CREATE TABLE IF NOT EXISTS songs (
@@ -28,6 +31,7 @@ class Song
     DB[:conn].execute(sql)
   end
 
+  # saves the created values in the rows into the database table
   def save
     sql = <<-SQL
       INSERT INTO songs (name, album)
@@ -44,9 +48,44 @@ class Song
     self
   end
 
+  # function that creates a new value for the row and saves the values in the approprate place, because we used keyword arguments
   def self.create(name:, album:)
     song = Song.new(name: name, album: album)
     song.save
   end
+
+  ## METHODS TO ACCESS DATA ALREADY MAPPED INTO A DATABASE
+
+  #To access new data(data we have already mapped to our database) from db. In this case it will be new
+
+  def self.new_from_db(row)
+    self.new(id: row[0], name: row[1], album: row[2])
+  end
+
+  def self.all
+    sql = <<-SQL
+    SELECT * 
+    FROM songs
+    SQL
+
+    DB[:conn].execute(sql).map do |row|
+      self.new_from_db(row)
+    end
+  end
+
+  def self.find_by_name(name)
+    sql = <<-SQL
+      SELECT *
+      FROM songs
+      WHERE name = ?
+      LIMIT 1
+    SQL
+
+    DB[:conn].execute(sql, name).map do |row|
+      self.new_from_db(row)
+    end.first
+  end
+
+
 
 end
